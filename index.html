@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#52616b">
+    <title>داستان‌ساز هوشمند</title>
+    <!-- فونت‌های پشتیبان برای بارگذاری سریع‌تر -->
+    <link rel="preload" href="https://cdn.fontcdn.ir/Font/Persian/B-Titr/B-Titr.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="https://cdn.fontcdn.ir/Font/Persian/B-Nazanin/B-Nazanin.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="glass-card">
+            <h1>داستان‌ساز هوشمند</h1>
+            
+            <div class="form-group">
+                <label for="prompt">موضوع داستان:</label>
+                <input type="text" id="prompt" placeholder="موضوع داستان خود را وارد کنید...">
+            </div>
+            
+            <div class="form-group">
+                <label for="keywords">کلمات کلیدی (اختیاری):</label>
+                <input type="text" id="keywords" placeholder="مثال: جنگل، پرنده، ماجراجویی، دوستی">
+                <small class="help-text">کلمات مهمی که می‌خواهید در داستان استفاده شوند - اختیاری</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="tone">لحن داستان:</label>
+                <select id="tone">
+                    <option value="childish">کودکانه</option>
+                    <option value="serious">جدی</option>
+                    <option value="normal">عادی</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="story-length">طول داستان:</label>
+                <select id="story-length">
+                    <option value="short">کوتاه (حداکثر ۲۰۰ کلمه)</option>
+                    <option value="medium" selected>متوسط (حداکثر ۴۰۰ کلمه)</option>
+                    <option value="long">بلند (حداکثر ۶۰۰ کلمه)</option>
+                    <option value="custom">سفارشی</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="custom-length-container" style="display: none;">
+                <label for="custom-length">تعداد کلمات سفارشی:</label>
+                <input type="number" id="custom-length" min="50" max="2000" value="500">
+                <small class="help-text">تعداد کلمات دلخواه (بین ۵۰ تا ۲۰۰۰)</small>
+            </div>
+            
+            <!-- مخفی کردن کادرهای کلید API و مدل هوش مصنوعی -->
+            <div class="form-group hidden">
+                <input type="hidden" id="api-key" value="">
+                <select id="model" style="display: none;"></select>
+            </div>
+            
+            <button id="generate-btn">ساخت داستان</button>
+            
+            <div class="result-container glass-card">
+                <h2>داستان شما</h2>
+                <div id="story-result">
+                    <p class="placeholder-text">داستان شما اینجا نمایش داده خواهد شد...</p>
+                </div>
+                <div class="word-count-container">
+                    <small id="word-count" class="word-count">تعداد کلمات: ۰</small>
+                </div>
+            </div>
+            
+            <div class="developer-info">
+                <p>توسعه دهنده: احسان شمسی</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

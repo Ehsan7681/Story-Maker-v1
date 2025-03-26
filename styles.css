@@ -1,0 +1,427 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
+@font-face {
+    font-family: 'BTitr';
+    src: url('https://cdn.fontcdn.ir/Font/Persian/B-Titr/B-Titr.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'BNazanin';
+    src: url('https://cdn.fontcdn.ir/Font/Persian/B-Nazanin/B-Nazanin.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --primary-color: #e0e5e9;
+    --silver-light: rgba(224, 229, 233, 0.5);
+    --glass-background: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --text-color: #333;
+    --cursor-color: #52616b;
+    --title-font: 'BTitr', 'Vazirmatn', Arial, sans-serif;
+    --body-font: 'BNazanin', 'Vazirmatn', Arial, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--body-font);
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    background: linear-gradient(135deg, #c9d6df, #52616b);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: var(--text-color);
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.glass-card {
+    background: var(--glass-background);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow-color);
+    padding: 30px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+    font-weight: 700;
+    font-size: 2rem;
+    font-family: var(--title-font);
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: 500;
+    font-size: 1.5rem;
+    font-family: var(--title-font);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-family: var(--title-font);
+}
+
+.help-text {
+    display: block;
+    margin-top: 5px;
+    color: rgba(51, 51, 51, 0.7);
+    font-size: 0.85rem;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: var(--text-color);
+    font-size: 16px;
+    font-family: var(--body-font);
+}
+
+input::placeholder {
+    color: rgba(51, 51, 51, 0.5);
+    font-family: var(--body-font);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #a0a8af, #7d8a96);
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    margin-bottom: 30px;
+    font-family: var(--title-font);
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.result-container {
+    min-height: 200px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+#story-result {
+    line-height: 1.6;
+    margin-bottom: 10px;
+    font-family: var(--body-font);
+}
+
+.word-count-container {
+    text-align: left;
+    border-top: 1px solid var(--glass-border);
+    padding-top: 8px;
+    margin-top: 5px;
+}
+
+.word-count {
+    color: rgba(51, 51, 51, 0.7);
+    font-size: 0.8rem;
+}
+
+.placeholder-text {
+    color: rgba(51, 51, 51, 0.6);
+    font-style: italic;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+
+.loading::after {
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #7d8a96;
+    animation: spin 1s ease-in-out infinite;
+}
+
+/* استایل برای نوشتن زنده متن */
+.typewriter {
+    display: inline;
+    position: relative;
+    font-family: var(--body-font);
+}
+
+.typewriter::after {
+    content: '|';
+    position: relative;
+    color: var(--cursor-color);
+    animation: blink 0.7s infinite;
+}
+
+/* استایل برای استیکرهای کودکانه */
+.child-emoji {
+    font-size: 1.2em;
+    margin: 0 2px;
+    vertical-align: middle;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+.error {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.developer-info {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: rgba(51, 51, 51, 0.7);
+    border-top: 1px solid var(--glass-border);
+    padding-top: 15px;
+}
+
+.developer-info p {
+    margin: 0;
+    font-family: var(--title-font);
+}
+
+/* استایل‌های ریسپانسیو برای صفحات مختلف */
+
+/* دسکتاپ بزرگ */
+@media (min-width: 1200px) {
+    html {
+        font-size: 18px;
+    }
+    
+    .container {
+        max-width: 900px;
+    }
+    
+    .glass-card {
+        padding: 40px;
+    }
+}
+
+/* دسکتاپ و تبلت افقی */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .container {
+        max-width: 800px;
+    }
+}
+
+/* تبلت‌ها */
+@media (max-width: 991px) and (min-width: 768px) {
+    .container {
+        max-width: 720px;
+    }
+    
+    .glass-card {
+        padding: 25px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 25px;
+    }
+}
+
+/* تبلت‌های کوچک و موبایل‌های بزرگ */
+@media (max-width: 767px) and (min-width: 576px) {
+    html {
+        font-size: 15px;
+    }
+    
+    .container {
+        max-width: 540px;
+    }
+    
+    .glass-card {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 1.6rem;
+        margin-bottom: 20px;
+    }
+    
+    input, select, button {
+        font-size: 15px;
+        padding: 10px 12px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+}
+
+/* موبایل‌ها */
+@media (max-width: 575px) {
+    html {
+        font-size: 14px;
+    }
+    
+    body {
+        padding: 15px;
+    }
+    
+    .glass-card {
+        padding: 15px;
+        border-radius: 12px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    label {
+        margin-bottom: 5px;
+    }
+    
+    input, select, button {
+        font-size: 14px;
+        padding: 8px 10px;
+        border-radius: 6px;
+    }
+    
+    button {
+        margin-bottom: 20px;
+    }
+    
+    .result-container {
+        min-height: 150px;
+        max-height: 40vh;
+    }
+}
+
+/* موبایل‌های کوچک */
+@media (max-width: 375px) {
+    html {
+        font-size: 13px;
+    }
+    
+    body {
+        padding: 10px;
+    }
+    
+    .glass-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    h1 {
+        font-size: 1.4rem;
+    }
+    
+    .developer-info {
+        margin-top: 15px;
+        padding-top: 10px;
+        font-size: 0.8rem;
+    }
+}
+
+/* حالت تاریک */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #e0e0e0;
+        --glass-background: rgba(40, 44, 52, 0.5);
+        --glass-border: rgba(255, 255, 255, 0.1);
+    }
+    
+    body {
+        background: linear-gradient(135deg, #2c3e50, #1a1a2e);
+    }
+    
+    h1, h2 {
+        color: #e0e0e0;
+    }
+    
+    .placeholder-text {
+        color: rgba(224, 224, 224, 0.6);
+    }
+    
+    .word-count, .help-text, .developer-info {
+        color: rgba(224, 224, 224, 0.7);
+    }
+    
+    input, select {
+        background: rgba(40, 44, 52, 0.5);
+        color: #e0e0e0;
+    }
+    
+    input::placeholder {
+        color: rgba(224, 224, 224, 0.5);
+    }
+    
+    button {
+        background: linear-gradient(135deg, #3f5973, #2c3e50);
+    }
+} 
