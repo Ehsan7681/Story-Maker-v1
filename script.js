@@ -1,156 +1,482 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const generateBtn = document.getElementById('generate-btn');
-    const promptInput = document.getElementById('prompt');
-    const keywordsInput = document.getElementById('keywords');
-    const toneSelect = document.getElementById('tone');
-    const storyLengthSelect = document.getElementById('story-length');
-    const customLengthContainer = document.getElementById('custom-length-container');
-    const customLengthInput = document.getElementById('custom-length');
-    const modelSelect = document.getElementById('model');
-    const apiKeyInput = document.getElementById('api-key');
-    const storyResult = document.getElementById('story-result');
-    const wordCountElement = document.getElementById('word-count');
+    const generateBtn = document.getElementById('generateStory');
+    const loadingSpinner = document.getElementById('loading');
+    const storyResult = document.getElementById('storyResult');
+    const storyContent = document.getElementById('storyContent');
+    const apiKeyInput = document.getElementById('apiKey');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const aiModelSelect = document.getElementById('aiModel');
+    const modelLoadingStatus = document.getElementById('modelLoadingStatus');
+    const wordCounter = document.getElementById('wordCounter');
+    const storyLengthSelect = document.getElementById('storyLength');
+    const customLengthContainer = document.getElementById('customLengthContainer');
+    const customWordCount = document.getElementById('customWordCount');
+    const searchableSelectContainer = document.querySelector('.searchable-select-container');
+    const storyThemeInput = document.getElementById('storyTheme');
+    const storyKeywordsInput = document.getElementById('storyKeywords');
     
-    // تنظیم نمایش فیلد طول سفارشی بر اساس انتخاب کاربر
-    storyLengthSelect.addEventListener('change', () => {
-        if (storyLengthSelect.value === 'custom') {
-            customLengthContainer.style.display = 'block';
+    // تابع تبدیل اعداد به فارسی
+    function toPersianNumber(num) {
+        const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        return num.toString().replace(/[0-9]/g, function(w) {
+            return persianNumbers[+w];
+        });
+    }
+    
+    // دکمه نمایش/مخفی کردن کلید API
+    togglePasswordBtn.addEventListener('click', () => {
+        const icon = togglePasswordBtn.querySelector('i');
+        
+        if (apiKeyInput.type === 'password') {
+            apiKeyInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
         } else {
-            customLengthContainer.style.display = 'none';
+            apiKeyInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
         }
     });
     
-    generateBtn.addEventListener('click', generateStory);
-    
-    // به کلیدهای ذخیره شده دسترسی پیدا کنید (اگر وجود داشته باشد)
-    const savedApiKey = localStorage.getItem('openrouter-api-key');
-    if (savedApiKey) {
-        apiKeyInput.value = savedApiKey;
-    } else {
-        // استفاده از کلید API پیش‌فرض
-        apiKeyInput.value = "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";
-        // ذخیره کلید پیش‌فرض در localStorage
-        localStorage.setItem('openrouter-api-key', apiKeyInput.value);
+    // بارگذاری موضوع و کلمات کلیدی قبلی
+    function loadPreviousInputs() {
+        const previousTheme = localStorage.getItem('previousTheme');
+        const previousKeywords = localStorage.getItem('previousKeywords');
+        
+        if (previousTheme) {
+            storyThemeInput.placeholder = `پیشنهاد: ${previousTheme}`;
+            storyThemeInput.title = 'موضوع استفاده شده در آخرین داستان';
+        }
+        
+        if (previousKeywords) {
+            storyKeywordsInput.placeholder = `پیشنهاد: ${previousKeywords}`;
+            storyKeywordsInput.title = 'کلمات کلیدی استفاده شده در آخرین داستان';
+        }
     }
     
-    // دریافت مدل‌های هوش مصنوعی از OpenRouter
-    fetchAIModels(apiKeyInput.value.trim());
+    // ذخیره موضوع و کلمات کلیدی فعلی
+    function saveCurrentInputs() {
+        const currentTheme = storyThemeInput.value.trim();
+        const currentKeywords = storyKeywordsInput.value.trim();
+        
+        if (currentTheme) {
+            localStorage.setItem('previousTheme', currentTheme);
+        }
+        if (currentKeywords) {
+            localStorage.setItem('previousKeywords', currentKeywords);
+        }
+    }
     
-    // وقتی کلید API تغییر کند، مدل‌ها را به‌روزرسانی کن
-    apiKeyInput.addEventListener('change', () => {
-        fetchAIModels(apiKeyInput.value.trim());
+    // حذف کلاس previous-input هنگام ویرایش
+    storyThemeInput.addEventListener('input', () => {
+        storyThemeInput.classList.remove('previous-input');
+        storyThemeInput.title = '';
     });
     
-    async function fetchAIModels(apiKey) {
+    storyKeywordsInput.addEventListener('input', () => {
+        storyKeywordsInput.classList.remove('previous-input');
+        storyKeywordsInput.title = '';
+    });
+    
+    // بارگذاری تنظیمات ذخیره شده
+    if (localStorage.getItem('openrouterApiKey')) {
+        apiKeyInput.value = localStorage.getItem('openrouterApiKey');
+        loadAvailableModels(localStorage.getItem('openrouterApiKey'));
+    } else {
+        loadDefaultModels();
+    }
+    
+    // بارگذاری موضوع و کلمات کلیدی قبلی
+    loadPreviousInputs();
+    
+    // بارگذاری لحن انتخاب شده قبلی
+    const storyToneSelect = document.getElementById('storyTone');
+    if (localStorage.getItem('selectedTone')) {
+        storyToneSelect.value = localStorage.getItem('selectedTone');
+    }
+    
+    // ذخیره لحن انتخاب شده
+    storyToneSelect.addEventListener('change', function() {
+        localStorage.setItem('selectedTone', this.value);
+    });
+    
+    // بارگذاری مدل انتخاب شده قبلی
+    if (localStorage.getItem('selectedAIModel')) {
+        setTimeout(() => {
+            try {
+                const savedModel = localStorage.getItem('selectedAIModel');
+                if (savedModel) {
+                    const options = aiModelSelect.querySelectorAll('option');
+                    let modelExists = false;
+                    
+                    options.forEach(option => {
+                        if (option.value === savedModel) {
+                            option.selected = true;
+                            modelExists = true;
+                        }
+                    });
+                    
+                    if (!modelExists) {
+                        console.log('مدل ذخیره شده یافت نشد:', savedModel);
+                    }
+                }
+            } catch (e) {
+                console.error('خطا در بازیابی مدل ذخیره شده:', e);
+            }
+        }, 1000);
+    }
+    
+    // ذخیره مدل انتخاب شده
+    aiModelSelect.addEventListener('change', function() {
+        const selectedModel = this.value;
+        if (selectedModel) {
+            localStorage.setItem('selectedAIModel', selectedModel);
+            console.log('مدل ذخیره شد:', selectedModel);
+        }
+    });
+    
+    // نمایش/مخفی کردن فیلد طول سفارشی
+    storyLengthSelect.addEventListener('change', () => {
+        customLengthContainer.style.display = storyLengthSelect.value === 'custom' ? 'block' : 'none';
+    });
+    
+    // تنظیم محدودیت‌های ورودی طول سفارشی
+    customWordCount.addEventListener('input', () => {
+        let value = parseInt(customWordCount.value);
+        if (value < 50) customWordCount.value = 50;
+        if (value > 1000) customWordCount.value = 1000;
+        
+        // نمایش عدد فارسی در placeholder
+        customWordCount.placeholder = `تعداد کلمات مورد نظر را وارد کنید (${toPersianNumber(50)} تا ${toPersianNumber(1000)})`;
+    });
+    
+    // اضافه کردن قابلیت جستجو به باکس انتخاب مدل
+    aiModelSelect.addEventListener('keyup', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = this.querySelectorAll('option');
+        const optgroups = this.querySelectorAll('optgroup');
+        
+        // اگر کلید Enter زده شد، جستجو را انجام بده
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+            return;
+        }
+        
+        // اگر کلید Escape زده شد، جستجو را پاک کن
+        if (e.key === 'Escape') {
+            this.value = '';
+            this.blur();
+            return;
+        }
+        
+        // جستجو در آپشن‌ها
+        options.forEach(option => {
+            if (option.disabled) return;
+            
+            const text = option.textContent.toLowerCase();
+            const id = option.value.toLowerCase();
+            const matches = text.includes(searchTerm) || id.includes(searchTerm);
+            
+            if (!option.parentElement.tagName || option.parentElement.tagName !== 'OPTGROUP') {
+                option.style.display = matches ? '' : 'none';
+            }
+        });
+        
+        // جستجو در گروه‌ها
+        optgroups.forEach(group => {
+            const groupOptions = group.querySelectorAll('option');
+            let hasVisibleOptions = false;
+            
+            groupOptions.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                const id = option.value.toLowerCase();
+                const matches = text.includes(searchTerm) || id.includes(searchTerm);
+                
+                option.style.display = matches ? '' : 'none';
+                if (matches) hasVisibleOptions = true;
+            });
+            
+            group.style.display = hasVisibleOptions ? '' : 'none';
+        });
+    });
+    
+    // بارگذاری مدل‌های AI از OpenRouter
+    async function loadAvailableModels(apiKey) {
         if (!apiKey) return;
         
         try {
-            modelSelect.innerHTML = '<option value="gemini-1.5-flash" selected>Google Gemini 2.0 Flash</option>';
+            modelLoadingStatus.textContent = 'در حال بارگذاری مدل‌ها...';
             
-            const response = await fetch("https://openrouter.ai/api/v1/models", {
-                method: "GET",
+            const requestOptions = {
+                method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                    "HTTP-Referer": window.location.href
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': window.location.origin,
+                    'Content-Type': 'application/json'
                 }
-            });
+            };
+            
+            console.log('Fetching models with key:', apiKey.substring(0, 8) + '...');
+            
+            const response = await fetch('https://openrouter.ai/api/v1/models', requestOptions);
             
             if (!response.ok) {
-                throw new Error(`خطای API با کد ${response.status}`);
+                const errorText = await response.text();
+                console.error('API Error Response (text):', errorText);
+                
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    errorData = { error: { message: 'خطا در پارس پاسخ' } };
+                }
+                
+                throw new Error(errorData.error?.message || `خطای سرور: ${response.status}`);
             }
             
             const data = await response.json();
+            console.log('Models data received:', data);
             
-            // پاک کردن لیست
-            modelSelect.innerHTML = '';
-            
-            // نمایش مدل‌های دریافت شده
-            if (data && data.data && data.data.length > 0) {
-                const models = data.data;
-                let geminiModelFound = false;
+            if (data.data && Array.isArray(data.data)) {
+                // پاک کردن مدل‌های فعلی
+                aiModelSelect.innerHTML = '';
                 
-                // ابتدا به دنبال مدل Gemini 2.0 Flash (1.5) بگردیم
-                const geminiModels = models.filter(model => 
-                    model.id.includes('gemini-1.5-flash') || 
-                    model.id.includes('google/gemini-1.5-flash') ||
-                    (model.id.includes('gemini') && model.id.includes('flash'))
-                );
+                // آرایه‌ای از مدل‌های محبوب
+                const featuredModels = [
+                    'gemini-1.5-flash',
+                    'gpt-4o',
+                    'claude-3-opus',
+                    'claude-3-sonnet',
+                    'claude-3-haiku',
+                    'gpt-4-turbo',
+                    'gpt-3.5-turbo'
+                ];
                 
-                if (geminiModels.length > 0) {
-                    // مدل Gemini را در ابتدای لیست قرار دهیم
-                    geminiModels.forEach(model => {
+                // ابتدا مدل‌های محبوب را اضافه کنیم
+                let addedModels = [];
+                
+                // گروه‌بندی مدل‌ها بر اساس خانواده
+                const modelFamilies = {};
+                
+                // دسته‌بندی مدل‌ها
+                data.data.forEach(model => {
+                    const familyName = model.id.split('-')[0]; // مثلاً 'gpt' یا 'claude'
+                    if (!modelFamilies[familyName]) {
+                        modelFamilies[familyName] = [];
+                    }
+                    modelFamilies[familyName].push(model);
+                });
+                
+                // ابتدا مدل‌های محبوب را اضافه می‌کنیم
+                featuredModels.forEach(modelId => {
+                    const model = data.data.find(m => m.id === modelId);
+                    if (model) {
                         const option = document.createElement('option');
                         option.value = model.id;
-                        option.textContent = `${model.name}`;
-                        option.selected = true; // این مدل را انتخاب کن
-                        modelSelect.appendChild(option);
-                        geminiModelFound = true;
-                    });
-                    
-                    // سایر مدل‌ها را اضافه کنیم
-                    models.filter(model => !geminiModels.includes(model)).forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model.id;
-                        option.textContent = `${model.name}`;
-                        modelSelect.appendChild(option);
-                    });
-                } else {
-                    // اگر Gemini پیدا نشد، تمام مدل‌ها را اضافه کنیم
-                    models.forEach((model, index) => {
-                        const option = document.createElement('option');
-                        option.value = model.id;
-                        option.textContent = `${model.name}`;
+                        option.textContent = `${model.name || model.id}`;
                         
-                        // اولین مدل را انتخاب کنیم اگر Gemini پیدا نشد
-                        if (index === 0) {
+                        // اگر Gemini باشد به طور پیش‌فرض انتخاب شود
+                        if (model.id === 'gemini-1.5-flash') {
                             option.selected = true;
                         }
                         
-                        modelSelect.appendChild(option);
+                        aiModelSelect.appendChild(option);
+                        addedModels.push(model.id);
+                    }
+                });
+                
+                // اضافه کردن خط جداکننده
+                if (addedModels.length > 0) {
+                    const separator = document.createElement('option');
+                    separator.disabled = true;
+                    separator.textContent = '─────────────────';
+                    aiModelSelect.appendChild(separator);
+                }
+                
+                // سپس سایر مدل‌ها را براساس دسته‌بندی اضافه می‌کنیم
+                Object.keys(modelFamilies).forEach(family => {
+                    // اضافه کردن گروه مدل
+                    const groupElement = document.createElement('optgroup');
+                    groupElement.label = family.charAt(0).toUpperCase() + family.slice(1);
+                    
+                    // اضافه کردن مدل‌های این گروه
+                    modelFamilies[family].forEach(model => {
+                        if (!addedModels.includes(model.id)) {
+                            const option = document.createElement('option');
+                            option.value = model.id;
+                            option.textContent = `${model.name || model.id}`;
+                            groupElement.appendChild(option);
+                            addedModels.push(model.id);
+                        }
+                    });
+                    
+                    // اگر این گروه مدل داشته باشد، آن را به سلکت باکس اضافه می‌کنیم
+                    if (groupElement.childNodes.length > 0) {
+                        aiModelSelect.appendChild(groupElement);
+                    }
+                });
+                
+                modelLoadingStatus.textContent = `${toPersianNumber(data.data.length)} مدل بارگذاری شد.`;
+                
+                // بررسی آیا مدل ذخیره شده قبلی وجود دارد
+                const savedModel = localStorage.getItem('selectedAIModel');
+                if (savedModel) {
+                    const options = aiModelSelect.querySelectorAll('option');
+                    options.forEach(option => {
+                        if (option.value === savedModel) {
+                            option.selected = true;
+                        }
                     });
                 }
             } else {
-                // اگر هیچ مدلی دریافت نشد، مدل‌های پیش‌فرض را نمایش بده
-                addDefaultModels();
+                throw new Error('فرمت داده دریافتی نامعتبر است');
             }
         } catch (error) {
-            console.error("خطا در دریافت مدل‌ها:", error);
-            // در صورت خطا، مدل‌های پیش‌فرض را نمایش بده
-            addDefaultModels();
+            console.error('Error loading models:', error);
+            modelLoadingStatus.textContent = `خطا در بارگذاری مدل‌ها: ${error.message}`;
+            
+            // بارگذاری مدل‌های پیش‌فرض در صورت خطا
+            loadDefaultModels();
         }
     }
     
-    function addDefaultModels() {
-        modelSelect.innerHTML = '';
+    // بارگذاری مدل‌های پیش‌فرض در صورت خطا
+    function loadDefaultModels() {
+        aiModelSelect.innerHTML = '';
         
         const defaultModels = [
-            { id: "gemini-1.5-flash", name: "Google Gemini 2.0 Flash" },
-            { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet" },
-            { id: "gpt-4o", name: "GPT-4o" }
+            { id: 'gemini-1.5-flash', name: 'Gemini 2 Flash', selected: true },
+            { id: 'gpt-4o', name: 'GPT-4o' },
+            { id: 'claude-3-haiku', name: 'Claude 3 Haiku' }
         ];
         
         defaultModels.forEach(model => {
             const option = document.createElement('option');
             option.value = model.id;
             option.textContent = model.name;
-            if (model.id === "gemini-1.5-flash") {
+            if (model.selected) {
                 option.selected = true;
             }
-            modelSelect.appendChild(option);
+            aiModelSelect.appendChild(option);
         });
+        
+        modelLoadingStatus.textContent = 'مدل‌های پیش‌فرض بارگذاری شدند. برای دریافت همه مدل‌ها، کلید API معتبر وارد کنید.';
     }
     
-    async function generateStory() {
-        const prompt = promptInput.value.trim();
-        const keywords = keywordsInput.value.trim();
-        const tone = toneSelect.value;
-        const storyLength = storyLengthSelect.value;
-        const model = modelSelect.value;
+    generateBtn.addEventListener('click', async () => {
         const apiKey = apiKeyInput.value.trim();
         
-        // محاسبه تعداد کلمات بر اساس انتخاب کاربر
+        if (!apiKey) {
+            alert('لطفاً کلید API را وارد کنید');
+            return;
+        }
+        
+        if (!apiKey.startsWith('sk-or-')) {
+            alert('کلید API باید با "sk-or-" شروع شود. لطفاً کلید معتبر وارد کنید.');
+            return;
+        }
+        
+        // ذخیره کلید API در localStorage
+        localStorage.setItem('openrouterApiKey', apiKey);
+        
+        // بارگذاری مدل‌ها اگر قبلاً بارگذاری نشده‌اند
+        if (aiModelSelect.options.length <= 1 && aiModelSelect.options[0].value === '') {
+            await loadAvailableModels(apiKey);
+        }
+        
+        const storyTheme = storyThemeInput.value.trim();
+        if (!storyTheme) {
+            alert('لطفاً موضوع داستان را وارد کنید');
+            return;
+        }
+        
+        const storyKeywords = storyKeywordsInput.value.trim();
+        const storyLength = storyLengthSelect.value;
+        const storyTone = document.getElementById('storyTone').value;
+        const aiModel = aiModelSelect.value;
+        
+        if (!aiModel) {
+            alert('لطفاً یک مدل هوش مصنوعی انتخاب کنید');
+            return;
+        }
+        
+        // ذخیره موضوع و کلمات کلیدی فعلی
+        saveCurrentInputs();
+        
+        // نمایش لودینگ
+        loadingSpinner.style.display = 'block';
+        storyResult.style.display = 'none';
+        
+        try {
+            const story = await generateStory(apiKey, storyTheme, storyKeywords, storyLength, storyTone, aiModel);
+            
+            // نمایش نتیجه
+            storyResult.style.display = 'block';
+            
+            // نمایش داستان به صورت زنده
+            typeStory(story);
+            
+            // اسکرول به پایین برای دیدن نتیجه
+            storyResult.scrollIntoView({ behavior: 'smooth' });
+        } catch (error) {
+            alert(`خطا در ساخت داستان: ${error.message}`);
+            console.error('Error details:', error);
+        } finally {
+            loadingSpinner.style.display = 'none';
+        }
+    });
+    
+    // تابع نمایش متن به صورت زنده
+    function typeStory(story) {
+        storyContent.innerHTML = '';
+        wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(0)}`;
+        
+        const paragraphs = story.split('\n\n').filter(p => p.trim() !== '');
+        let currentParagraph = 0;
+        let totalWordCount = 0;
+        
+        // شمارش کل کلمات
+        const totalWords = story.trim().split(/\s+/).length;
+        
+        function typeParagraph() {
+            if (currentParagraph >= paragraphs.length) return;
+            
+            const paragraph = paragraphs[currentParagraph];
+            const p = document.createElement('p');
+            storyContent.appendChild(p);
+            
+            let charIndex = 0;
+            
+            function typeChar() {
+                if (charIndex < paragraph.length) {
+                    p.textContent += paragraph.charAt(charIndex);
+                    charIndex++;
+                    
+                    // به‌روزرسانی شمارنده کلمات
+                    const currentText = storyContent.textContent;
+                    const currentWordCount = currentText.trim().split(/\s+/).length;
+                    wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(currentWordCount)} از ${toPersianNumber(totalWords)}`;
+                    
+                    // سرعت تایپ - تصادفی برای واقعی‌تر بودن
+                    const speed = Math.floor(Math.random() * 10) + 5;
+                    setTimeout(typeChar, speed);
+                } else {
+                    currentParagraph++;
+                    setTimeout(typeParagraph, 100);
+                }
+            }
+            
+            typeChar();
+        }
+        
+        typeParagraph();
+    }
+    
+    async function generateStory(apiKey, theme, keywords, length, tone, model) {
+        // تعیین طول داستان
         let maxWords;
-        switch (storyLength) {
+        switch (length) {
             case 'short':
                 maxWords = 200;
                 break;
@@ -161,176 +487,153 @@ document.addEventListener('DOMContentLoaded', () => {
                 maxWords = 600;
                 break;
             case 'custom':
-                maxWords = parseInt(customLengthInput.value) || 500;
+                maxWords = parseInt(customWordCount.value) || 400;
                 break;
-            default:
-                maxWords = 400;
         }
         
-        if (!prompt) {
-            alert('لطفاً موضوع داستان را وارد کنید.');
-            return;
-        }
-        
-        if (!apiKey) {
-            // اگر کلید خالی بود، کلید پیش‌فرض را قرار دهیم
-            apiKeyInput.value = "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";
-            localStorage.setItem('openrouter-api-key', apiKeyInput.value);
-        }
-        
-        // نمایش حالت در حال بارگذاری
-        storyResult.innerHTML = '';
-        storyResult.classList.add('loading');
-        generateBtn.disabled = true;
-        wordCountElement.textContent = 'تعداد کلمات: ۰';
-        
-        try {
-            const storyStream = await fetchStoryFromAI(prompt, keywords, tone, maxWords, model, apiKey);
-            storyResult.classList.remove('loading');
-            
-            // اگر لحن کودکانه است، استیکرهای کودکانه اضافه کنیم
-            if (tone === 'childish') {
-                const storyWithEmojis = addChildEmojis(storyStream);
-                typeWriter(storyWithEmojis, storyResult);
-                updateWordCount(storyStream); // شمارش کلمات بدون استیکرها
-            } else {
-                typeWriter(storyStream, storyResult);
-                updateWordCount(storyStream);
-            }
-        } catch (error) {
-            storyResult.classList.remove('loading');
-            storyResult.innerHTML = `<p class="error">خطا: ${error.message}</p>`;
-            generateBtn.disabled = false;
-        }
-    }
-    
-    // اضافه کردن استیکرهای کودکانه به متن داستان
-    function addChildEmojis(text) {
-        // لیست استیکرهای کودکانه
-        const childEmojis = [
-            '🧚', '🦄', '🌈', '🐶', '🐱', '🦊', '🐻', '🐼', '🦁', 
-            '🐨', '🐯', '🦋', '🐝', '🐞', '🌻', '🌺', '⭐', '🌟', 
-            '✨', '🎈', '🎀', '🎁', '🌍', '🚀', '🛸', '🧸', '🍦', 
-            '🍭', '🍬', '🍩', '🎪', '🎠', '🎡', '🎢', '🌳', '🍄'
-        ];
-        
-        // بررسی پایان جملات و اضافه کردن استیکرها
-        const sentences = text.split(/(?<=[.!؟،،\n])/);
-        
-        return sentences.map(sentence => {
-            // برای هر جمله با احتمال 40٪ استیکر اضافه کنیم
-            if (sentence.trim().length > 0 && Math.random() < 0.4) {
-                const randomEmoji = childEmojis[Math.floor(Math.random() * childEmojis.length)];
-                return `${sentence} <span class="child-emoji">${randomEmoji}</span>`;
-            }
-            return sentence;
-        }).join('');
-    }
-    
-    // به‌روزرسانی شمارنده کلمات
-    function updateWordCount(text) {
-        // حذف فاصله‌های اضافی و شمارش کلمات
-        const wordCount = text.trim().split(/\s+/).length;
-        
-        // تبدیل اعداد انگلیسی به فارسی
-        const persianWordCount = wordCount.toString().replace(/\d/g, d => {
-            return ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'][d];
-        });
-        
-        wordCountElement.textContent = `تعداد کلمات: ${persianWordCount}`;
-    }
-    
-    function typeWriter(text, element, speed = 20) {
-        let i = 0;
-        element.innerHTML = '<span class="typewriter"></span>';
-        const typewriterElement = element.querySelector('.typewriter');
-        
-        const timer = setInterval(() => {
-            if (i < text.length) {
-                // اگر به یک تگ HTML رسیدیم، آن را به صورت کامل اضافه کنیم
-                if (text.charAt(i) === '<') {
-                    const endTagIndex = text.indexOf('>', i);
-                    if (endTagIndex !== -1) {
-                        typewriterElement.innerHTML += text.substring(i, endTagIndex + 1);
-                        i = endTagIndex + 1;
-                    } else {
-                        typewriterElement.innerHTML += text.charAt(i);
-                        i++;
-                    }
-                } else if (text.charAt(i) === '\n') {
-                    typewriterElement.innerHTML += '<br>';
-                    i++;
-                } else {
-                    typewriterElement.innerHTML += text.charAt(i);
-                    i++;
-                }
-                // اسکرول به پایین به صورت خودکار
-                element.scrollTop = element.scrollHeight;
-            } else {
-                clearInterval(timer);
-                // حذف کلاس typewriter و تبدیل به متن عادی (با حفظ تگ‌های HTML)
-                element.innerHTML = text;
-                generateBtn.disabled = false;
-            }
-        }, speed);
-    }
-    
-    async function fetchStoryFromAI(prompt, keywords, tone, maxWords, model, apiKey) {
-        let tonePrompt = '';
+        // تعیین لحن داستان و تنظیمات ایموجی
+        let toneDescription;
+        let emojiSettings = '';
         switch (tone) {
             case 'childish':
-                tonePrompt = 'یک داستان کودکانه با زبان ساده و شخصیت‌های دوست‌داشتنی بنویس. از کلمات ساده استفاده کن و اتفاقات جالب و آموزنده را شرح بده.';
+                toneDescription = 'کودکانه و ساده برای کودکان';
+                emojiSettings = `
+                از ایموجی‌های کودکانه و شاد در متن استفاده کن. برای مثال:
+                - برای شخصیت‌های اصلی: 👶 👧 👦
+                - برای حیوانات: 🐱 🐶 🐰 🐼
+                - برای طبیعت: 🌞 🌙 ⭐ 🌈
+                - برای احساسات: 😊 😄 😍 🎉
+                - برای اشیاء: 🎈 🎨 🎭 🎪
+                - برای غذاها: 🍎 🍪 🍦 🍫
+                - برای فعالیت‌ها: 🎮 🎨 🎭 🎪
+                - برای پایان داستان: 🌟 ✨ 🎉
+                
+                نکات مهم برای استفاده از ایموجی:
+                1. از ایموجی‌ها به صورت متعادل استفاده کن (نه خیلی زیاد و نه خیلی کم)
+                2. ایموجی‌ها باید با متن هماهنگ باشند
+                3. در ابتدای هر پاراگراف از یک ایموجی مرتبط استفاده کن
+                4. در پایان داستان از ایموجی‌های شاد و مثبت استفاده کن
+                `;
                 break;
             case 'serious':
-                tonePrompt = 'یک داستان جدی و عمیق بنویس که مفاهیم پیچیده را بررسی کند. از زبان رسمی و توصیفات دقیق استفاده کن.';
+                toneDescription = 'جدی و عمیق';
                 break;
             case 'normal':
-                tonePrompt = 'یک داستان متعادل با زبان روان و طبیعی بنویس که برای همه سنین مناسب باشد.';
+                toneDescription = 'عادی و متعادل';
                 break;
         }
         
-        let keywordsPrompt = '';
-        if (keywords) {
-            keywordsPrompt = `در داستان خود از این کلمات کلیدی استفاده کن: ${keywords}`;
-        }
+        // ساخت پیام برای ارسال به API
+        let prompt = `
+        لطفاً یک داستان با حداکثر ${toPersianNumber(maxWords)} کلمه با موضوع "${theme}" و لحن ${toneDescription} بنویس.
+        داستان باید جذاب، خلاقانه و پرمعنا باشد.
+        ${tone === 'childish' ? emojiSettings : ''}
+        اگر لحن کودکانه است، از کلمات ساده و جملات کوتاه استفاده کن.
+        داستان را با پاراگراف‌بندی مناسب و بدون هیچ توضیح اضافی تولید کن.
+        مهم: داستان باید کمتر از ${toPersianNumber(maxWords)} کلمه باشد (حدود ${toPersianNumber(Math.floor(maxWords * 0.8))} تا ${toPersianNumber(Math.floor(maxWords * 0.95))} کلمه).
+        `;
         
-        const systemMessage = `تو یک نویسنده خلاق هستی. یک داستان کوتاه و جذاب بنویس که حداکثر ${maxWords} کلمه داشته باشد. هر داستان باید شخصیت‌های جالب، طرح داستانی منسجم و یک نتیجه‌گیری رضایت‌بخش داشته باشد.`;
+        // اضافه کردن کلمات کلیدی اگر وجود داشته باشند
+        if (keywords) {
+            prompt += `\nلطفاً از کلمات کلیدی زیر در داستان استفاده کن: ${keywords}`;
+        }
         
         const messages = [
             {
-                "role": "system",
-                "content": systemMessage
-            },
-            {
-                "role": "user",
-                "content": `${tonePrompt} ${keywordsPrompt} موضوع داستان: ${prompt}. داستان را در حداکثر ${maxWords} کلمه بنویس.`
+                role: 'user',
+                content: prompt
             }
         ];
         
-        const baseURL = "https://openrouter.ai/api/v1/chat/completions";
+        const requestData = {
+            model: model,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: Math.floor(maxWords * 1.5) // تبدیل تقریبی کلمات به توکن
+        };
         
-        const response = await fetch(baseURL, {
-            method: "POST",
+        // تنظیمات درخواست API
+        const requestOptions = {
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": window.location.href,
-                "X-Title": "AI Story Generator"
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': window.location.origin
             },
-            body: JSON.stringify({
-                model: model,
-                messages: messages,
-                temperature: 0.7,
-                max_tokens: maxWords * 5 // تخمین تقریبی برای حداکثر توکن‌ها
-            })
+            body: JSON.stringify(requestData)
+        };
+        
+        console.log('Sending story request with:', {
+            model: model,
+            theme: theme,
+            keywords: keywords,
+            length: length,
+            tone: tone,
+            apiKey: apiKey.substring(0, 8) + '...' // فقط بخشی از کلید نمایش داده می‌شود
         });
         
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error?.message || `خطای API با کد ${response.status}`);
+        try {
+            // ارسال درخواست به API
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', requestOptions);
+            
+            // گرفتن پاسخ به صورت متن برای بررسی بهتر
+            const responseText = await response.text();
+            console.log('Raw API response:', responseText);
+            
+            // تبدیل متن به JSON
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                throw new Error('خطا در پردازش پاسخ سرور');
+            }
+            
+            // بررسی خطا
+            if (!response.ok) {
+                console.error('API Error Response:', data);
+                throw new Error(data.error?.message || `خطای سرور: ${response.status}`);
+            }
+            
+            // بررسی داده‌های دریافتی
+            if (data.choices && data.choices.length > 0) {
+                return data.choices[0].message.content;
+            } else {
+                console.error('Invalid API response structure:', data);
+                throw new Error('ساختار پاسخ نامعتبر است');
+            }
+        } catch (error) {
+            console.error('Error in fetch operation:', error);
+            throw error;
         }
-        
-        const data = await response.json();
-        return data.choices[0].message.content;
     }
+    
+    function formatStory(storyText) {
+        // تبدیل خط جدید به تگ p
+        return storyText
+            .split('\n\n')
+            .filter(paragraph => paragraph.trim() !== '')
+            .map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
+            .join('');
+    }
+    
+    // بررسی وجود کلید API و بارگذاری مدل‌ها در صورت وجود
+    apiKeyInput.addEventListener('input', function() {
+        const apiKey = this.value.trim();
+        if (apiKey.length > 10 && apiKey.startsWith('sk-or-')) {
+            loadAvailableModels(apiKey);
+        }
+    });
+    
+    // نمایش/مخفی کردن باکس جستجو
+    aiModelSelect.addEventListener('focus', () => {
+        searchableSelectContainer.classList.add('active');
+    });
+    
+    aiModelSelect.addEventListener('blur', (e) => {
+        // اگر موس روی باکس جستجو نیست، آن را مخفی کن
+        if (!searchableSelectContainer.contains(e.relatedTarget)) {
+            searchableSelectContainer.classList.remove('active');
+        }
+    });
 }); 
