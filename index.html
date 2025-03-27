@@ -76,10 +76,64 @@
                 <p>در حال ساخت داستان...</p>
             </div>
             
-            <div class="story-container" id="storyResult">
+            <div id="storyResult" class="story-container">
                 <h2>داستان شما</h2>
                 <div id="storyContent" class="story-content"></div>
-                <div class="word-counter" id="wordCounter">تعداد کلمات: 0</div>
+                <div class="word-counter" id="wordCounter">تعداد کلمات: <span id="wordCount">0</span></div>
+                <div class="story-actions">
+                    <button id="viewFullStoryBtn" class="glass-button">
+                        <i class="fas fa-eye"></i> مشاهده کل داستان
+                    </button>
+                    <button id="copyStoryBtn" class="glass-button">
+                        <i class="fas fa-copy"></i> کپی داستان
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="history-header">
+                <h2>تاریخچه داستان‌ها</h2>
+                <button id="toggleHistory" class="toggle-history-btn">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div id="savedStories" class="saved-stories" style="display: none;">
+                <!-- داستان‌های ذخیره شده اینجا نمایش داده می‌شوند -->
+            </div>
+        </div>
+
+        <div id="editStoryModal" class="modal">
+            <div class="modal-content glass-card">
+                <h2>ویرایش داستان</h2>
+                <div class="form-group">
+                    <label for="editStoryTitle">عنوان داستان:</label>
+                    <input type="text" id="editStoryTitle" class="glass-input" placeholder="عنوان داستان را وارد کنید">
+                </div>
+                <div class="form-group">
+                    <label for="editStoryContent">متن داستان:</label>
+                    <textarea id="editStoryContent" class="glass-input" rows="10" placeholder="متن داستان را وارد کنید"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button id="saveEditBtn" class="glass-button">ذخیره تغییرات</button>
+                    <button id="cancelEditBtn" class="glass-button">انصراف</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewStoryModal" class="modal view-story-modal">
+            <div class="modal-content glass-card">
+                <h2>مشاهده داستان</h2>
+                <div class="story-metadata">
+                    <span><i class="fas fa-calendar"></i> تاریخ: <span id="viewStoryDate"></span></span>
+                    <span><i class="fas fa-tag"></i> کلمات کلیدی: <span id="viewStoryKeywords"></span></span>
+                    <span><i class="fas fa-ruler"></i> طول: <span id="viewStoryLength"></span></span>
+                    <span><i class="fas fa-robot"></i> مدل: <span id="viewStoryModel"></span></span>
+                </div>
+                <div class="story-full-content" id="viewStoryContent"></div>
+                <div class="modal-buttons">
+                    <button id="closeViewBtn" class="glass-button">بستن</button>
+                </div>
             </div>
         </div>
     </div>

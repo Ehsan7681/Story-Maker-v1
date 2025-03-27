@@ -27,6 +27,10 @@ body {
 .container {
     width: 100%;
     max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+    overflow: visible;
 }
 
 .glass-card {
@@ -38,6 +42,11 @@ body {
     box-shadow: 0 8px 32px 0 var(--shadow-color);
     padding: 30px;
     margin-bottom: 30px;
+    display: block;
+    width: 100%;
+    height: auto !important;
+    overflow: visible !important;
+    box-sizing: border-box;
 }
 
 h1 {
@@ -256,38 +265,142 @@ label {
     display: none;
     margin-top: 30px;
     position: relative;
-}
-
-.story-content {
+    min-height: 200px;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 20px;
     background: var(--glass-bg-color);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    padding: 20px;
     border-radius: 10px;
     border: 1px solid var(--glass-border-color);
-    line-height: 1.8;
-    min-height: 200px;
     box-shadow: 0 4px 15px 0 var(--shadow-color);
+    transition: height 0.3s ease-out;
+    max-height: none !important;
+    margin-bottom: 150px; /* افزایش فضا در پایین برای دکمه‌ها و شمارنده */
+    box-sizing: border-box;
+    will-change: height;
+    display: block;
+    width: 100%;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+.story-content {
+    padding: 20px;
+    line-height: 2.2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-height: 200px;
+    height: auto !important;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+    position: relative;
+    margin-bottom: 20px;
+    overflow: visible !important;
+    font-size: 16px;
+    text-align: right;
+    direction: rtl;
+    box-sizing: border-box;
+}
+
+/* استایل برای دکمه‌های زیر داستان */
+.story-actions {
+    display: flex;
+    gap: 15px;
+    margin: 20px 0;
+    position: absolute;
+    bottom: -110px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 8;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.story-actions .glass-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-color);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.story-actions .glass-button i {
+    font-size: 18px;
+    color: var(--primary-color);
+}
+
+.story-actions .glass-button:hover {
+    transform: translateY(-2px);
+}
+
+.story-actions .glass-button:active {
+    transform: translateY(0);
 }
 
 /* استایل برای افکت تایپ زنده */
 .typing-effect {
     border-right: 2px solid var(--primary-color);
-    white-space: nowrap;
-    overflow: hidden;
-    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+    white-space: pre-wrap;
+    overflow: visible;
+    min-height: 200px;
+    height: auto !important;
+    display: block;
+    width: 100%;
+    position: relative;
+}
+
+/* استایل برای پاراگراف‌های داستان */
+.story-content p {
+    margin-bottom: 20px;
+    text-align: justify;
+    overflow: visible;
+    padding-bottom: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.story-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* بهبود نمایش ایموجی‌ها */
+.story-content p:has(emoji), 
+.story-content span:has(emoji) {
+    letter-spacing: 0.03em;
 }
 
 /* استایل برای شمارنده کلمات */
 .word-counter {
     position: absolute;
-    bottom: -30px;
+    bottom: -40px;
     left: 0;
+    right: 0;
     font-size: 14px;
     color: #666;
-    background: rgba(255, 255, 255, 0.7);
+    background: transparent;
     padding: 5px 10px;
-    border-radius: 5px;
+    text-align: center;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    z-index: 30;
+    margin-bottom: 10px;
 }
 
 h2 {
@@ -378,4 +491,276 @@ h2 {
     h1 {
         font-size: 22px;
     }
+}
+
+/* استایل برای تاریخچه داستان‌ها */
+.saved-stories {
+    margin-top: 20px;
+    max-height: 600px; /* ارتفاع حداکثر برای 3 داستان */
+    overflow-y: auto;
+    padding-right: 10px; /* فضا برای اسکرول‌بار */
+    scrollbar-width: thin; /* برای فایرفاکس */
+    scrollbar-color: var(--primary-color) rgba(255, 255, 255, 0.1); /* برای فایرفاکس */
+}
+
+/* استایل برای اسکرول‌بار */
+.saved-stories::-webkit-scrollbar {
+    width: 8px;
+}
+
+.saved-stories::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+.saved-stories::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+    opacity: 0.5;
+    min-height: 40px;
+}
+
+.saved-stories::-webkit-scrollbar-thumb:hover {
+    opacity: 0.7;
+}
+
+/* حذف استایل‌های تکراری و تداخل‌کننده */
+.saved-stories {
+    transition: max-height 0.3s ease;
+}
+
+/* استایل برای کارت داستان */
+.story-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.story-card:last-child {
+    margin-bottom: 0; /* حذف فاصله آخرین کارت */
+}
+
+.story-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.story-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.story-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.story-date {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.story-preview {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin-bottom: 10px;
+    max-height: 100px;
+    overflow: hidden;
+}
+
+.history-actions {
+    display: flex;
+    gap: 10px;
+    position: static;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: auto;
+    background: none;
+    padding: 0;
+    box-shadow: none;
+    margin: 10px 0 0 0;
+    z-index: 1;
+}
+
+.story-action-btn {
+    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex: 1;
+}
+
+.story-action-btn i {
+    color: var(--primary-color);
+    font-size: 16px;
+}
+
+.story-action-btn:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.story-action-btn:active {
+    transform: translateY(0);
+}
+
+/* استایل برای هدر تاریخچه */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.history-header h2 {
+    margin: 0;
+}
+
+.toggle-history-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.toggle-history-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.toggle-history-btn i {
+    transition: transform 0.3s ease;
+}
+
+.toggle-history-btn.active i {
+    transform: rotate(180deg);
+}
+
+/* استایل برای مودال */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    position: relative;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* انیمیشن برای مودال */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal.show {
+    display: flex;
+    animation: modalFadeIn 0.3s ease;
+}
+
+/* استایل برای مودال مشاهده داستان */
+.view-story-modal .modal-content {
+    max-width: 800px;
+    width: 95%;
+}
+
+.view-story-modal .story-full-content {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    line-height: 2.2;
+    font-size: 16px;
+    color: var(--text-color);
+    max-height: 60vh;
+    overflow-y: auto;
+    text-align: right;
+    direction: rtl;
+}
+
+.view-story-modal .story-full-content p {
+    margin-bottom: 20px;
+}
+
+.view-story-modal .story-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.view-story-modal .story-metadata span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.view-story-modal .story-metadata i {
+    color: var(--primary-color);
+}
+
+/* حذف استایل‌های اسکرول‌بار که دیگر نیازی نیست */
+.story-container::-webkit-scrollbar,
+.story-container::-webkit-scrollbar-track,
+.story-container::-webkit-scrollbar-thumb,
+.story-container::-webkit-scrollbar-thumb:hover {
+    display: none;
+}
+
+/* استایل برای ایموجی‌ها */
+.emoji {
+    display: inline-block;
+    font-size: 1.2em;
+    margin: 0 3px;
+    vertical-align: middle;
 } 

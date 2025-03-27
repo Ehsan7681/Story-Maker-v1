@@ -15,6 +15,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const storyThemeInput = document.getElementById('storyTheme');
     const storyKeywordsInput = document.getElementById('storyKeywords');
     
+    // متغیرهای مربوط به مدیریت داستان‌ها
+    const savedStoriesContainer = document.getElementById('savedStories');
+    const editStoryModal = document.getElementById('editStoryModal');
+    const editStoryTitle = document.getElementById('editStoryTitle');
+    const editStoryContent = document.getElementById('editStoryContent');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    let currentEditingStoryId = null;
+    
+    // متغیرهای مربوط به تاریخچه
+    const toggleHistoryBtn = document.getElementById('toggleHistory');
+    
+    // متغیرهای مربوط به مودال مشاهده
+    const viewStoryModal = document.getElementById('viewStoryModal');
+    const viewStoryContent = document.getElementById('viewStoryContent');
+    const viewStoryDate = document.getElementById('viewStoryDate');
+    const viewStoryKeywords = document.getElementById('viewStoryKeywords');
+    const viewStoryLength = document.getElementById('viewStoryLength');
+    const viewStoryModel = document.getElementById('viewStoryModel');
+    const closeViewBtn = document.getElementById('closeViewBtn');
+    const viewFullStoryBtn = document.getElementById('viewFullStoryBtn');
+    const copyStoryBtn = document.getElementById('copyStoryBtn');
+    
     // تابع تبدیل اعداد به فارسی
     function toPersianNumber(num) {
         const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -364,6 +387,198 @@ document.addEventListener('DOMContentLoaded', () => {
         modelLoadingStatus.textContent = 'مدل‌های پیش‌فرض بارگذاری شدند. برای دریافت همه مدل‌ها، کلید API معتبر وارد کنید.';
     }
     
+    // تابع ذخیره داستان
+    function saveStory(story, theme, keywords, length, tone, model) {
+        const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        const newStory = {
+            id: Date.now(),
+            title: theme,
+            content: story,
+            metadata: {
+                keywords,
+                length,
+                tone,
+                model,
+                date: new Date().toLocaleString('fa-IR')
+            }
+        };
+        
+        stories.unshift(newStory); // اضافه کردن داستان جدید به ابتدای لیست
+        localStorage.setItem('savedStories', JSON.stringify(stories));
+        displaySavedStories();
+    }
+    
+    // تابع نمایش داستان‌های ذخیره شده
+    function displaySavedStories() {
+        const savedStories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        savedStoriesContainer.innerHTML = '';
+        
+        if (savedStories.length === 0) {
+            savedStoriesContainer.innerHTML = '<p class="no-stories">هنوز داستانی ذخیره نشده است.</p>';
+            return;
+        }
+        
+        savedStories.forEach(story => {
+            const storyDate = story.metadata?.date || story.date || new Date().toLocaleDateString('fa-IR');
+            const previewContent = story.content.length > 150 ? 
+                                 story.content.substring(0, 150) + '...' : 
+                                 story.content;
+            
+            const storyEl = document.createElement('div');
+            storyEl.className = 'story-card';
+            storyEl.innerHTML = `
+                <div class="story-header">
+                    <div class="story-title">${story.title || story.theme || 'بدون عنوان'}</div>
+                    <div class="story-date">${storyDate}</div>
+                </div>
+                <div class="story-preview">${previewContent}</div>
+                <div class="history-actions">
+                    <button class="story-action-btn view-btn" data-id="${story.id}">
+                        <i class="fas fa-eye"></i> مشاهده
+                    </button>
+                    <button class="story-action-btn edit-btn" data-id="${story.id}">
+                        <i class="fas fa-edit"></i> ویرایش
+                    </button>
+                    <button class="story-action-btn delete-btn" data-id="${story.id}">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </div>
+            `;
+            
+            savedStoriesContainer.appendChild(storyEl);
+        });
+        
+        // اضافه کردن event listener به دکمه‌ها
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const storyId = this.dataset.id;
+                viewStory(storyId);
+            });
+        });
+        
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const storyId = this.dataset.id;
+                editStory(storyId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const storyId = this.dataset.id;
+                if (confirm('آیا از حذف این داستان اطمینان دارید؟')) {
+                    deleteStory(storyId);
+                }
+            });
+        });
+    }
+    
+    // تابع ویرایش داستان
+    function editStory(storyId) {
+        const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        storyId = parseInt(storyId); // تبدیل به عدد
+        const story = stories.find(s => s.id === storyId);
+        
+        if (story) {
+            currentEditingStoryId = storyId;
+            editStoryTitle.value = story.title || story.theme || 'بدون عنوان';
+            editStoryContent.value = story.content;
+            editStoryModal.classList.add('show');
+        } else {
+            console.error('داستان یافت نشد:', storyId);
+        }
+    }
+    
+    // تابع حذف داستان
+    function deleteStory(storyId) {
+        storyId = parseInt(storyId); // تبدیل به عدد
+        const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        const updatedStories = stories.filter(s => s.id !== storyId);
+        localStorage.setItem('savedStories', JSON.stringify(updatedStories));
+        displaySavedStories();
+    }
+    
+    // ذخیره تغییرات ویرایش
+    saveEditBtn.addEventListener('click', () => {
+        if (!currentEditingStoryId) return;
+        
+        const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        const storyIndex = stories.findIndex(s => s.id === currentEditingStoryId);
+        
+        if (storyIndex !== -1) {
+            stories[storyIndex].title = editStoryTitle.value;
+            stories[storyIndex].content = editStoryContent.value;
+            stories[storyIndex].metadata.date = new Date().toLocaleString('fa-IR');
+            localStorage.setItem('savedStories', JSON.stringify(stories));
+            displaySavedStories();
+            editStoryModal.classList.remove('show');
+            currentEditingStoryId = null;
+        }
+    });
+    
+    // بستن مودال ویرایش
+    cancelEditBtn.addEventListener('click', () => {
+        editStoryModal.classList.remove('show');
+        currentEditingStoryId = null;
+    });
+    
+    // بستن مودال با کلیک خارج از آن
+    editStoryModal.addEventListener('click', (e) => {
+        if (e.target === editStoryModal) {
+            editStoryModal.classList.remove('show');
+            currentEditingStoryId = null;
+        }
+    });
+    
+    // تابع مشاهده داستان
+    function viewStory(storyId) {
+        const stories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        storyId = parseInt(storyId); // تبدیل به عدد
+        const story = stories.find(s => s.id === storyId);
+        
+        if (story) {
+            // تاریخ
+            viewStoryDate.textContent = story.metadata?.date || story.date || 'نامشخص';
+            
+            // کلمات کلیدی
+            viewStoryKeywords.textContent = story.metadata?.keywords || 'بدون کلمات کلیدی';
+            
+            // طول داستان
+            const length = story.metadata?.length || 'نامشخص';
+            viewStoryLength.textContent = length === 'custom' ? 
+                `${story.metadata?.customLength || '?'} کلمه` : 
+                length === 'short' ? 'کوتاه' :
+                length === 'medium' ? 'متوسط' : 
+                length === 'long' ? 'بلند' : 'نامشخص';
+            
+            // مدل
+            viewStoryModel.textContent = story.metadata?.model || 'نامشخص';
+            
+            // محتوا
+            viewStoryContent.innerHTML = formatStory(story.content);
+            
+            // نمایش مودال
+            viewStoryModal.classList.add('show');
+        } else {
+            console.error('داستان یافت نشد:', storyId);
+        }
+    }
+    
+    // بستن مودال مشاهده
+    closeViewBtn.addEventListener('click', () => {
+        viewStoryModal.classList.remove('show');
+    });
+    
+    // بستن مودال با کلیک خارج از آن
+    viewStoryModal.addEventListener('click', (e) => {
+        if (e.target === viewStoryModal) {
+            viewStoryModal.classList.remove('show');
+        }
+    });
+    
+    // نمایش داستان‌های ذخیره شده در بارگذاری صفحه
+    displaySavedStories();
+    
     generateBtn.addEventListener('click', async () => {
         const apiKey = apiKeyInput.value.trim();
         
@@ -411,6 +626,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const story = await generateStory(apiKey, storyTheme, storyKeywords, storyLength, storyTone, aiModel);
             
+            // ذخیره داستان
+            saveStory(story, storyTheme, storyKeywords, storyLength, storyTone, aiModel);
+            
             // نمایش نتیجه
             storyResult.style.display = 'block';
             
@@ -430,39 +648,87 @@ document.addEventListener('DOMContentLoaded', () => {
     // تابع نمایش متن به صورت زنده
     function typeStory(story) {
         storyContent.innerHTML = '';
-        wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(0)}`;
+        const wordCount = document.getElementById('wordCount');
+        if (wordCount) {
+            wordCount.textContent = toPersianNumber(0);
+        } else {
+            wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(0)}`;
+        }
         
+        // جدا کردن پاراگراف‌ها و اطمینان از جداسازی صحیح متن
         const paragraphs = story.split('\n\n').filter(p => p.trim() !== '');
         let currentParagraph = 0;
-        let totalWordCount = 0;
         
         // شمارش کل کلمات
         const totalWords = story.trim().split(/\s+/).length;
+        
+        // محاسبه ارتفاع تقریبی نهایی بر اساس تعداد پاراگراف‌ها
+        const estimatedHeight = Math.max(200, paragraphs.length * 100 + 100); // حداقل 200px ارتفاع
+        
+        // ایجاد همه پاراگراف‌ها از ابتدا برای جلوگیری از تغییر ارتفاع مداوم
+        paragraphs.forEach(() => {
+            const p = document.createElement('p');
+            p.textContent = ''; // پاراگراف خالی
+            storyContent.appendChild(p);
+        });
+        
+        // تنظیم حداقل ارتفاع برای پیش‌بینی محتوا
+        storyResult.style.minHeight = `${estimatedHeight}px`;
+        
+        const allParagraphs = storyContent.querySelectorAll('p');
+        
+        // اطمینان از نمایش کامل کادر
+        function updateContainerHeight() {
+            const contentHeight = storyContent.scrollHeight;
+            const containerPadding = 40; // 20px بالا + 20px پایین
+            const actionsHeight = 150; // فضای اضافی برای دکمه‌ها و شمارنده کلمات
+            
+            // تنظیم ارتفاع کانتینر بر اساس محتوا
+            storyResult.style.height = `${contentHeight + containerPadding}px`;
+        }
         
         function typeParagraph() {
             if (currentParagraph >= paragraphs.length) return;
             
             const paragraph = paragraphs[currentParagraph];
-            const p = document.createElement('p');
-            storyContent.appendChild(p);
+            const p = allParagraphs[currentParagraph];
             
             let charIndex = 0;
             
             function typeChar() {
                 if (charIndex < paragraph.length) {
-                    p.textContent += paragraph.charAt(charIndex);
+                    // اطمینان از جدا بودن ایموجی‌ها از متن
+                    const char = paragraph.charAt(charIndex);
+                    if (isEmoji(char)) {
+                        // اضافه کردن فاصله قبل و بعد از ایموجی برای جلوگیری از چسبیدن به متن
+                        p.textContent = p.textContent.trim() + ' ' + char + ' ';
+                    } else {
+                        p.textContent += char;
+                    }
+                    
                     charIndex++;
                     
-                    // به‌روزرسانی شمارنده کلمات
-                    const currentText = storyContent.textContent;
-                    const currentWordCount = currentText.trim().split(/\s+/).length;
-                    wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(currentWordCount)} از ${toPersianNumber(totalWords)}`;
+                    // به‌روزرسانی شمارنده کلمات هر 10 کاراکتر
+                    if (charIndex % 10 === 0) {
+                        const currentText = storyContent.textContent;
+                        const currentWordCount = currentText.trim().split(/\s+/).length;
+                        
+                        if (wordCount) {
+                            wordCount.textContent = toPersianNumber(currentWordCount);
+                        } else {
+                            wordCounter.textContent = `تعداد کلمات: ${toPersianNumber(currentWordCount)} از ${toPersianNumber(totalWords)}`;
+                        }
+                        
+                        // به‌روزرسانی ارتفاع کانتینر هر 10 کاراکتر برای نمایش روان‌تر
+                        updateContainerHeight();
+                    }
                     
-                    // سرعت تایپ - تصادفی برای واقعی‌تر بودن
-                    const speed = Math.floor(Math.random() * 10) + 5;
+                    // سرعت تایپ - سریع‌تر برای راحتی کاربر
+                    const speed = Math.floor(Math.random() * 3) + 1;
                     setTimeout(typeChar, speed);
                 } else {
                     currentParagraph++;
+                    updateContainerHeight(); // به‌روزرسانی ارتفاع پس از اتمام هر پاراگراف
                     setTimeout(typeParagraph, 100);
                 }
             }
@@ -470,9 +736,125 @@ document.addEventListener('DOMContentLoaded', () => {
             typeChar();
         }
         
+        // آماده‌سازی مشاهده داستان قبل از شروع تایپ
+        storyResult.style.display = 'block';
+        updateContainerHeight();
+        
         typeParagraph();
     }
     
+    // تابع تشخیص ایموجی
+    function isEmoji(str) {
+        const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+        return emojiRegex.test(str);
+    }
+    
+    // تابع فرمت‌دهی به داستان برای نمایش
+    function formatStory(storyText) {
+        // اطمینان از جداسازی صحیح پاراگراف‌ها
+        const paragraphs = storyText.split('\n\n').filter(para => para.trim() !== '');
+        
+        // فرمت‌دهی هر پاراگراف و بهبود نمایش ایموجی‌ها
+        const formattedText = paragraphs.map(paragraph => {
+            // جداسازی کاراکترها برای بررسی ایموجی‌ها
+            let formatted = '';
+            for (let i = 0; i < paragraph.length; i++) {
+                const char = paragraph.charAt(i);
+                if (isEmoji(char)) {
+                    // اضافه کردن فاصله مناسب برای ایموجی‌ها
+                    formatted += ` <span class="emoji">${char}</span> `;
+                } else {
+                    formatted += char;
+                }
+            }
+            
+            // تبدیل خط‌های داخل پاراگراف به <br>
+            formatted = formatted.replace(/\n/g, '<br>');
+            
+            return `<p>${formatted}</p>`;
+        }).join('');
+        
+        return formattedText;
+    }
+    
+    // بررسی وجود کلید API و بارگذاری مدل‌ها در صورت وجود
+    apiKeyInput.addEventListener('input', function() {
+        const apiKey = this.value.trim();
+        if (apiKey.length > 10 && apiKey.startsWith('sk-or-')) {
+            loadAvailableModels(apiKey);
+        }
+    });
+    
+    // نمایش/مخفی کردن باکس جستجو
+    aiModelSelect.addEventListener('focus', () => {
+        searchableSelectContainer.classList.add('active');
+    });
+    
+    aiModelSelect.addEventListener('blur', (e) => {
+        // اگر موس روی باکس جستجو نیست، آن را مخفی کن
+        if (!searchableSelectContainer.contains(e.relatedTarget)) {
+            searchableSelectContainer.classList.remove('active');
+        }
+    });
+    
+    // تابع باز/بسته کردن تاریخچه
+    toggleHistoryBtn.addEventListener('click', () => {
+        const isVisible = savedStoriesContainer.style.display === 'block';
+        savedStoriesContainer.style.display = isVisible ? 'none' : 'block';
+        savedStoriesContainer.style.maxHeight = isVisible ? '0' : '600px';
+        toggleHistoryBtn.classList.toggle('active');
+        
+        // تغییر آیکون
+        const icon = toggleHistoryBtn.querySelector('i');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    });
+
+    // اضافه کردن عملکرد دکمه مشاهده کل داستان
+    viewFullStoryBtn.addEventListener('click', () => {
+        const storyText = storyContent.textContent;
+        // ایجاد محتوا با فرمت صحیح پاراگراف‌ها
+        viewStoryContent.innerHTML = formatStory(storyText);
+        
+        // اضافه کردن تاریخ امروز
+        const todayDate = new Date().toLocaleString('fa-IR');
+        viewStoryDate.textContent = todayDate;
+        
+        // اضافه کردن کلمات کلیدی
+        viewStoryKeywords.textContent = storyKeywordsInput.value || 'بدون کلمات کلیدی';
+        
+        // اضافه کردن طول داستان
+        const length = storyLengthSelect.value;
+        viewStoryLength.textContent = length === 'custom' ? 
+            `${customWordCount.value} کلمه` : 
+            length === 'short' ? 'کوتاه' :
+            length === 'medium' ? 'متوسط' : 'بلند';
+        
+        // اضافه کردن مدل
+        viewStoryModel.textContent = aiModelSelect.options[aiModelSelect.selectedIndex].text;
+        
+        // نمایش مودال
+        viewStoryModal.classList.add('show');
+    });
+
+    // اضافه کردن عملکرد دکمه کپی داستان
+    copyStoryBtn.addEventListener('click', async () => {
+        const storyText = storyContent.textContent;
+        try {
+            await navigator.clipboard.writeText(storyText);
+            copyStoryBtn.innerHTML = '<i class="fas fa-check"></i> کپی شد!';
+            setTimeout(() => {
+                copyStoryBtn.innerHTML = '<i class="fas fa-copy"></i> کپی داستان';
+            }, 2000);
+        } catch (err) {
+            console.error('خطا در کپی کردن داستان:', err);
+            copyStoryBtn.innerHTML = '<i class="fas fa-times"></i> خطا در کپی';
+            setTimeout(() => {
+                copyStoryBtn.innerHTML = '<i class="fas fa-copy"></i> کپی داستان';
+            }, 2000);
+        }
+    });
+
     async function generateStory(apiKey, theme, keywords, length, tone, model) {
         // تعیین طول داستان
         let maxWords;
@@ -512,7 +894,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 1. از ایموجی‌ها به صورت متعادل استفاده کن (نه خیلی زیاد و نه خیلی کم)
                 2. ایموجی‌ها باید با متن هماهنگ باشند
                 3. در ابتدای هر پاراگراف از یک ایموجی مرتبط استفاده کن
-                4. در پایان داستان از ایموجی‌های شاد و مثبت استفاده کن
+                4. هر ایموجی باید با یک فاصله از متن جدا شود تا خوانایی بهتر شود
+                5. در پایان داستان از ایموجی‌های شاد و مثبت استفاده کن
                 `;
                 break;
             case 'serious':
@@ -607,33 +990,4 @@ document.addEventListener('DOMContentLoaded', () => {
             throw error;
         }
     }
-    
-    function formatStory(storyText) {
-        // تبدیل خط جدید به تگ p
-        return storyText
-            .split('\n\n')
-            .filter(paragraph => paragraph.trim() !== '')
-            .map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
-            .join('');
-    }
-    
-    // بررسی وجود کلید API و بارگذاری مدل‌ها در صورت وجود
-    apiKeyInput.addEventListener('input', function() {
-        const apiKey = this.value.trim();
-        if (apiKey.length > 10 && apiKey.startsWith('sk-or-')) {
-            loadAvailableModels(apiKey);
-        }
-    });
-    
-    // نمایش/مخفی کردن باکس جستجو
-    aiModelSelect.addEventListener('focus', () => {
-        searchableSelectContainer.classList.add('active');
-    });
-    
-    aiModelSelect.addEventListener('blur', (e) => {
-        // اگر موس روی باکس جستجو نیست، آن را مخفی کن
-        if (!searchableSelectContainer.contains(e.relatedTarget)) {
-            searchableSelectContainer.classList.remove('active');
-        }
-    });
 }); 
